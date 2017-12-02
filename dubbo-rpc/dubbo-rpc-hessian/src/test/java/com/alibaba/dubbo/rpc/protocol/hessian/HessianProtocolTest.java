@@ -37,17 +37,42 @@ import static org.junit.Assert.fail;
 public class HessianProtocolTest {
 
     @Test
-    public void testHessianProtocol() {
-        HessianServiceImpl server = new HessianServiceImpl();
-        Assert.assertFalse(server.isCalled());
-        ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+    public void test() {
+        HessianServiceImpl serviceImpl = new HessianServiceImpl();
+        /**
+         * 发布服务
+         * 	1.先考虑通过什么协议？这里用的是Hessian协议
+         * 	2.通过URL方式选择配置组件
+         */
+        // 通过ExtensionLoader，先获得ProtocolFactory，然后获得实例代理
         Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
-        URL url = URL.valueOf("hessian://127.0.0.1:5342/" + HessianService.class.getName() + "?version=1.0.0");
-        Exporter<HessianService> exporter = protocol.export(proxyFactory.getInvoker(server, HessianService.class, url));
+        URL url = URL.valueOf("hessian://127.0.0.1:5342/" + HessianService.class.getName() + "?version=1.0.0&proxy=jdk");
+        ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+        
+        Invoker<HessianService> serviceInvoker = proxyFactory.getInvoker(serviceImpl, HessianService.class, url);
+        Exporter<HessianService> exporter = protocol.export(serviceInvoker);
+        
+        
         Invoker<HessianService> invoker = protocol.refer(HessianService.class, url);
         HessianService client = proxyFactory.getProxy(invoker);
         String result = client.sayHello("haha");
-        Assert.assertTrue(server.isCalled());
+        invoker.destroy();
+        exporter.unexport();
+    }
+    
+    @Test
+    public void testHessianProtocol() {
+        HessianServiceImpl serviceImpl = new HessianServiceImpl();
+        Assert.assertFalse(serviceImpl.isCalled());
+        ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
+        Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
+        URL url = URL.valueOf("hessian://127.0.0.1:5342/" + HessianService.class.getName() + "?version=1.0.0&proxy=jdk");
+        Invoker<HessianService> serviceInvoker = proxyFactory.getInvoker(serviceImpl, HessianService.class, url);
+        Exporter<HessianService> exporter = protocol.export(serviceInvoker);
+        Invoker<HessianService> invoker = protocol.refer(HessianService.class, url);
+        HessianService client = proxyFactory.getProxy(invoker);
+        String result = client.sayHello("haha");
+        Assert.assertTrue(serviceImpl.isCalled());
         Assert.assertEquals("Hello, haha", result);
         invoker.destroy();
         exporter.unexport();

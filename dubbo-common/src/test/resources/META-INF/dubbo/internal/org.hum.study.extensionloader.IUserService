@@ -1,0 +1,3 @@
+userService1=org.hum.study.extensionloader.impl.UserServiceImpl1
+userService2=org.hum.study.extensionloader.impl.UserServiceImpl2
+userService3=org.hum.study.extensionloader.impl.UserServiceImpl3

@@ -96,7 +96,12 @@ public class ExtensionLoader<T> {
 
     private ExtensionLoader(Class<?> type) {
         this.type = type;
-        objectFactory = (type == ExtensionFactory.class ? null : ExtensionLoader.getExtensionLoader(ExtensionFactory.class).getAdaptiveExtension());
+        if (type == ExtensionFactory.class) {
+        		objectFactory = null;
+        } else {
+	        ExtensionLoader<ExtensionFactory> defaultExtensionLoader = ExtensionLoader.getExtensionLoader(ExtensionFactory.class);
+	        objectFactory = defaultExtensionLoader.getAdaptiveExtension();
+        }
     }
 
     private static <T> boolean withExtensionAnnotation(Class<T> type) {
@@ -607,6 +612,7 @@ public class ExtensionLoader<T> {
                         try {
                             String line = null;
                             while ((line = reader.readLine()) != null) {
+                            		// 判断是否有注释#
                                 final int ci = line.indexOf('#');
                                 if (ci >= 0) line = line.substring(0, ci);
                                 line = line.trim();
