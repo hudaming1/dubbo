@@ -24,6 +24,8 @@ package com.alibaba.dubbo.rpc.protocol.hessian;
 public interface HessianService {
 
     String sayHello(String name);
+    
+    String sayHello(int count);
 
     void timeOut(int millis);
 

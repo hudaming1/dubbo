@@ -53,4 +53,9 @@ public class HessianServiceImpl implements HessianService {
             super(message);
         }
     }
+
+	@Override
+	public String sayHello(int count) {
+		return "hello count " + count;
+	}
 }

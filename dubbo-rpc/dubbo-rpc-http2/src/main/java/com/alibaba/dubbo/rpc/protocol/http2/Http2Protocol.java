@@ -2,12 +2,18 @@ package com.alibaba.dubbo.rpc.protocol.http2;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.core.LocalVariableTableParameterNameDiscoverer;
 
 import com.alibaba.dubbo.common.URL;
 import com.alibaba.dubbo.remoting.http.HttpBinder;
@@ -17,6 +23,7 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.RpcException;
 import com.alibaba.dubbo.rpc.protocol.AbstractProxyProtocol;
 import com.alibaba.fastjson.JSON;
+import com.esotericsoftware.reflectasm.MethodAccess;
 
 public class Http2Protocol extends AbstractProxyProtocol {
 
@@ -92,17 +99,43 @@ public class Http2Protocol extends AbstractProxyProtocol {
 		}
 	}
 	
+	private static final String URL_PARAM_METHOD_NAME = "method_name";
+	
 	private static class ImplWrapper<T> {
 		public Class<T> interfaceType;
 		public Object impl;
+		private MethodAccess methodAccess;
 		public ImplWrapper(Class<T> interfaceType, Object impl) {
 			this.interfaceType = interfaceType;
 			this.impl = impl;
+			this.methodAccess = MethodAccess.get(interfaceType);
 		}
 		
 		public Object invoke(Map parameterMap) {
+			if (!parameterMap.containsKey(URL_PARAM_METHOD_NAME)) {
+				throw new IllegalArgumentException("method_name mustn't be null");
+			}
+			String methodName = parameterMap.get("method_name").toString();
 			
-			return "haha";
+			return methodAccess.invoke(impl, methodName);
 		}
 	}
+	
+	public static List<String> getParamterName(Class clazz, String methodName){
+        LocalVariableTableParameterNameDiscoverer u = new LocalVariableTableParameterNameDiscoverer();
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (methodName.equals(method.getName())) {
+                String[] params = u.getParameterNames(method);
+                return Arrays.asList(params);
+            }
+        }
+
+        return null;
+    }
+	
+	public static void main(String[] args) {
+		System.out.println(getParamterName(Http2Protocol.class, "doExport"));
+	}
+	
 }

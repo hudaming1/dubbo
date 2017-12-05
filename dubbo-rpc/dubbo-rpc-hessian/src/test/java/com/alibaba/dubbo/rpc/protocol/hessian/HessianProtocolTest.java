@@ -29,6 +29,8 @@ import org.junit.Test;
 
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+
 /**
  * HessianProtocolTest
  *
@@ -37,7 +39,7 @@ import static org.junit.Assert.fail;
 public class HessianProtocolTest {
 
     @Test
-    public void test() {
+    public void test() throws IOException {
         HessianServiceImpl serviceImpl = new HessianServiceImpl();
         /**
          * 发布服务
@@ -46,7 +48,7 @@ public class HessianProtocolTest {
          */
         // 通过ExtensionLoader，先获得ProtocolFactory，然后获得实例代理
         Protocol protocol = ExtensionLoader.getExtensionLoader(Protocol.class).getAdaptiveExtension();
-        URL url = URL.valueOf("hessian://127.0.0.1:5342/" + HessianService.class.getName() + "?version=1.0.0&proxy=jdk");
+        URL url = URL.valueOf("hessian://127.0.0.1:5342/" + HessianService.class.getName() + "?timeout=11111111&version=1.0.0&proxy=jdk");
         ProxyFactory proxyFactory = ExtensionLoader.getExtensionLoader(ProxyFactory.class).getAdaptiveExtension();
         
         Invoker<HessianService> serviceInvoker = proxyFactory.getInvoker(serviceImpl, HessianService.class, url);
@@ -55,9 +57,12 @@ public class HessianProtocolTest {
         
         Invoker<HessianService> invoker = protocol.refer(HessianService.class, url);
         HessianService client = proxyFactory.getProxy(invoker);
-        String result = client.sayHello("haha");
-        invoker.destroy();
-        exporter.unexport();
+        System.out.println(client.sayHello("haha"));
+        System.out.println(client.sayHello(111));
+        System.in.read();
+//        invoker.destroy();
+//        exporter.unexport();
+        
     }
     
     @Test
