@@ -58,6 +58,9 @@ public class ExtensionLoader_Adaptive_Test {
     @Test
     public void test_getAdaptiveExtension_defaultAdaptiveKey() throws Exception {
         {
+        	/**
+        	 * 接口SimpleExt使用了SPI注解指定了默认实现类impl1，调用时url没有指定任何value，最终调用impl1
+        	 */
             SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension();
 
             Map<String, String> map = new HashMap<String, String>();
@@ -68,6 +71,9 @@ public class ExtensionLoader_Adaptive_Test {
         }
 
         {
+        	/**
+        	 * 调用时，通过url传入simple.ext的值，来动态选择实现
+        	 */
             SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension();
 
             Map<String, String> map = new HashMap<String, String>();
@@ -79,6 +85,10 @@ public class ExtensionLoader_Adaptive_Test {
         }
     }
 
+    /**
+     * 关于@Adaptive.value的使用，既然定义了value，就不需要将interfaceName作为key来动态选择。
+     * @throws Exception
+     */
     @Test
     public void test_getAdaptiveExtension_customizeAdaptiveKey() throws Exception {
         SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension();
@@ -100,15 +110,24 @@ public class ExtensionLoader_Adaptive_Test {
         UseProtocolKeyExt ext = ExtensionLoader.getExtensionLoader(UseProtocolKeyExt.class).getAdaptiveExtension();
 
         {
+        	/**
+        	 * SPI使用impl1，参数没有指定，使用缺省值
+        	 */
             String echo = ext.echo(URL.valueOf("1.2.3.4:20880"), "s");
             assertEquals("Ext3Impl1-echo", echo); // 缺省值
 
             Map<String, String> map = new HashMap<String, String>();
             URL url = new URL("impl3", "1.2.3.4", 1010, "path1", map);
 
+            /**
+             * 当url的protocol指定了实现类impl3，则调用时使用impl3
+             */
             echo = ext.echo(url, "s");
             assertEquals("Ext3Impl3-echo", echo); // 使用第2Key， Protocol
 
+            /**
+             * 测试key的优先级，protocol和key同时出现，根据定义时的优先顺序使用
+             */
             url = url.addParameter("key1", "impl2");
             echo = ext.echo(url, "s");
             assertEquals("Ext3Impl2-echo", echo); // 使用第1Key， key1
@@ -136,6 +155,9 @@ public class ExtensionLoader_Adaptive_Test {
         SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension();
 
         try {
+        	/**
+        	 * 测试url不能为空
+        	 */
             ext.echo(null, "haha");
             fail();
         } catch (IllegalArgumentException e) {
@@ -146,6 +168,9 @@ public class ExtensionLoader_Adaptive_Test {
     @Test
     public void test_getAdaptiveExtension_ExceptionWhenNoAdaptiveMethodOnInterface() throws Exception {
         try {
+        	/**
+        	 * 没有对应Adapive注解
+        	 */
             ExtensionLoader.getExtensionLoader(NoAdaptiveMethodExt.class).getAdaptiveExtension();
             fail();
         } catch (IllegalStateException expected) {
@@ -172,6 +197,9 @@ public class ExtensionLoader_Adaptive_Test {
         URL url = new URL("p1", "1.2.3.4", 1010, "path1", map);
 
         try {
+        	/**
+        	 * 没有找到对应p1的实现 
+        	 */
             ext.bang(url, 33);
             fail();
         } catch (UnsupportedOperationException expected) {
@@ -185,6 +213,9 @@ public class ExtensionLoader_Adaptive_Test {
     @Test
     public void test_getAdaptiveExtension_ExceptionWhenNoUrlAttribute() throws Exception {
         try {
+        	/**
+        	 * 参数列表不包含URL对象
+        	 */
             ExtensionLoader.getExtensionLoader(NoUrlParamExt.class).getAdaptiveExtension();
             fail();
         } catch (Exception expected) {
@@ -195,6 +226,9 @@ public class ExtensionLoader_Adaptive_Test {
 
     @Test
     public void test_urlHolder_getAdaptiveExtension() throws Exception {
+    	/**
+    	 * 被标注@Adaptive的方法参数列表中，第一个参数可以不是URL对象，但参数中必须包含url类型的参数，且字段名字为url
+    	 */
         Ext2 ext = ExtensionLoader.getExtensionLoader(Ext2.class).getAdaptiveExtension();
 
         Map<String, String> map = new HashMap<String, String>();
@@ -212,6 +246,9 @@ public class ExtensionLoader_Adaptive_Test {
     public void test_urlHolder_getAdaptiveExtension_noExtension() throws Exception {
         Ext2 ext = ExtensionLoader.getExtensionLoader(Ext2.class).getAdaptiveExtension();
 
+        /**
+         * 找不到对应的Extension，无论是通过protocol还是parameter，因为@Adatpive中并没有指定value
+         */
         URL url = new URL("p1", "1.2.3.4", 1010, "path1");
 
         UrlHolder holder = new UrlHolder();
@@ -238,6 +275,9 @@ public class ExtensionLoader_Adaptive_Test {
     public void test_urlHolder_getAdaptiveExtension_UrlNpe() throws Exception {
         Ext2 ext = ExtensionLoader.getExtensionLoader(Ext2.class).getAdaptiveExtension();
 
+        /**
+         * url参数不能为空，或UrlHolder中的url字段不能为空
+         */
         try {
             ext.echo(null, "haha");
             fail();
@@ -255,6 +295,9 @@ public class ExtensionLoader_Adaptive_Test {
 
     @Test
     public void test_urlHolder_getAdaptiveExtension_ExceptionWhenNotAdativeMethod() throws Exception {
+    	/**
+    	 * Adaptive的实现中，调用了非Adaptive方法，报错
+    	 */
         Ext2 ext = ExtensionLoader.getExtensionLoader(Ext2.class).getAdaptiveExtension();
 
         Map<String, String> map = new HashMap<String, String>();
@@ -273,6 +316,9 @@ public class ExtensionLoader_Adaptive_Test {
 
     @Test
     public void test_urlHolder_getAdaptiveExtension_ExceptionWhenNameNotProvided() throws Exception {
+    	/**
+    	 * 和上面一个case一样，都是因为没有指定@Adaptive的value，因此无论是protocol还是parameter都无法找到Extension
+    	 */
         Ext2 ext = ExtensionLoader.getExtensionLoader(Ext2.class).getAdaptiveExtension();
 
         URL url = new URL("p1", "1.2.3.4", 1010, "path1");
